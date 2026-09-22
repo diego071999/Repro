@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Música">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0b0f">
+<title>Mi Música</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;background:#0b0b0f;color:#fff;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{max-width:760px;margin:auto;padding:24px 18px 40px;min-height:100%}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;position:relative}
+h1{font-size:28px;margin:0 0 5px}
+.muted{color:#9b9ba5;font-size:14px}
+.add{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#111;padding:12px 16px;border-radius:14px;font-weight:700;min-height:44px;cursor:pointer;position:relative;overflow:hidden;z-index:1}
+.add input[type=file]{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  opacity:0.01;cursor:pointer;font-size:16px;z-index:2;
+}
+.card{margin-top:22px;background:#17171d;border:1px solid #292930;border-radius:28px;padding:22px}
+.cover{width:min(280px,80vw);aspect-ratio:1;margin:auto;border-radius:24px;background:linear-gradient(145deg,#292932,#101014);display:flex;align-items:center;justify-content:center;font-size:80px}
+.info{text-align:center;margin:18px 0 10px}
+.title{font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.artist{color:#9999a3;margin-top:5px}
+input[type=range]{width:100%;accent-color:#fff;-webkit-appearance:none;appearance:none;height:6px;background:#333;border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:#fff;border-radius:50%;cursor:pointer}
+.times{display:flex;justify-content:space-between;color:#888;font-size:12px;margin-top:6px}
+.controls{display:flex;justify-content:center;align-items:center;gap:12px;margin:14px 0}
+.btn{border:0;background:transparent;color:#fff;font-size:25px;min-width:48px;min-height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.play{background:#fff;color:#111;font-size:22px;width:64px;height:64px}
+.row{display:flex;align-items:center;gap:12px;background:#17171d;border:1px solid #292930;padding:11px 12px;border-radius:15px;margin-top:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.row.active{border-color:#fff}
+.rowname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row button{border:0;background:transparent;color:#fff;font-size:17px;min-width:44px;min-height:44px}
+.section{margin-top:24px}
+.sectionhead{display:flex;justify-content:space-between;align-items:center}
+.notice{margin-top:12px;padding:12px 14px;border-radius:14px;background:#202027;color:#b8b8c2;font-size:13px;line-height:1.4}
+button{cursor:pointer}
+.empty{text-align:center;color:#777;padding:25px}
+.vol-row{display:flex;gap:10px;align-items:center;margin-top:8px}
+.vol-row input{flex:1}
+.install-banner{
+  display:none;margin-top:16px;padding:14px 16px;border-radius:16px;
+  background:linear-gradient(135deg,#1a1a24,#252532);border:1px solid #3a3a48;
+  font-size:14px;line-height:1.4;
+}
+.install-banner.show{display:block}
+.install-banner b{color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <h1>Mi música</h1>
+      <div id="status" class="muted">Añade canciones desde Archivos</div>
+    </div>
+    <label class="add">
+      ＋ Añadir
+      <input id="files" type="file" accept=".mp3,.m4a,.aac,.wav,.ogg,.flac,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,audio/flac,audio/*" multiple>
+    </label>
+  </div>
+
+  <div id="installBanner" class="install-banner">
+    <b>📱 Ponla como app:</b><br>
+    En Safari → botón Compartir (□↑) → <b>Añadir a pantalla de inicio</b>.<br>
+    Después funcionará sin internet.
+  </div>
+
+  <div class="notice">
+    Pulsa <b>＋ Añadir</b> y selecciona tus archivos de audio desde la app <b>Archivos</b>.
+    Este reproductor no puede acceder a las canciones protegidas de la app Música.
+  </div>
+
+  <div class="card">
+    <div class="cover">♫</div>
+    <div class="info">
+      <div id="title" class="title">Ninguna canción</div>
+      <div id="artist" class="artist">Selecciona una canción</div>
+    </div>
+    <input id="progress" type="range" min="0" max="100" value="0" step="0.1">
+    <div class="times"><span id="current">0:00</span><span id="duration">0:00</span></div>
+    <div class="controls">
+      <button id="prev" class="btn" aria-label="Anterior">↶</button>
+      <button id="play" class="btn play" aria-label="Reproducir">▶</button>
+      <button id="next" class="btn" aria-label="Siguiente">↷</button>
+    </div>
+    <div class="vol-row">
+      <span>🔊</span>
+      <input id="volume" type="range" min="0" max="1" value="1" step="0.01">
+      <button id="shuffle" class="btn" style="font-size:18px" aria-label="Aleatorio">🔀</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sectionhead">
+      <h2>Cola</h2>
+      <span id="count" class="muted">0 canciones</span>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<audio id="audio" playsinline preload="metadata"></audio>
+
+<script>
+(function(){
+"use strict";
+
+// Registrar Service Worker para offline
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+// Mostrar banner de "Añadir a pantalla de inicio" solo en iOS Safari (no en modo standalone)
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+if (isIOS && !isStandalone) {
+  const banner = document.getElementById("installBanner");
+  if (banner) banner.classList.add("show");
+}
+
+const audio = document.getElementById("audio");
+let songs = [];
+let index = -1;
+let shuffle = false;
+let isSeeking = false;
+
+const $ = id => document.getElementById(id);
+
+const fmt = s => {
+  if (!Number.isFinite(s) || s < 0) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  return m + ":" + sec;
+};
+
+function setStatus(msg) {
+  $("status").textContent = msg;
+}
+
+function render() {
+  $("count").textContent = songs.length + " " + (songs.length === 1 ? "canción" : "canciones");
+  const list = $("list");
+  list.innerHTML = "";
+
+  if (!songs.length) {
+    list.innerHTML = '<div class="empty">Todavía no has añadido canciones.</div>';
+    return;
+  }
+
+  songs.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "row" + (i === index ? " active" : "");
+    
+    const icon = document.createElement("span");
+    icon.textContent = i === index ? "♫" : "♪";
+    
+    const name = document.createElement("div");
+    name.className = "rowname";
+    name.textContent = s.name;
+    
+    const btn = document.createElement("button");
+    btn.textContent = "▶";
+    btn.setAttribute("aria-label", "Reproducir");
+    
+    row.append(icon, name, btn);
+    
+    const playThis = (e) => {
+      if (e) e.stopPropagation();
+      load(i, true);
+    };
+    
+    row.addEventListener("click", playThis);
+    btn.addEventListener("click", playThis);
+    
+    list.appendChild(row);
+  });
+}
+
+function load(i, autoPlay) {
+  if (!songs.length) return;
+  
+  index = ((i % songs.length) + songs.length) % songs.length;
+  const s = songs[index];
+  
+  audio.removeAttribute("src");
+  audio.load();
+  
+  audio.src = s.url;
+  
+  $("title").textContent = s.name.replace(/\.[^/.]+$/, "") || s.name;
+  $("artist").textContent = "Archivo local";
+  $("progress").value = 0;
+  $("current").textContent = "0:00";
+  $("duration").textContent = "0:00";
+  
+  render();
+  
+  setTimeout(() => {
+    if (autoPlay) {
+      const p = audio.play();
+      if (p && p.catch) {
+        p.catch(() => {
+          setStatus("Toca ▶ para iniciar el audio");
+        });
+      }
+    }
+  }, 50);
+}
+
+$("files").addEventListener("change", function(e) {
+  const files = Array.from(e.target.files || []);
+  
+  if (!files.length) {
+    setStatus("No se seleccionaron archivos");
+    return;
+  }
+  
+  const audioFiles = files.filter(f => {
+    const type = (f.type || "").toLowerCase();
+    const name = (f.name || "").toLowerCase();
+    return type.startsWith("audio/") ||
+           /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(name) ||
+           type === "application/octet-stream";
+  });
+  
+  if (!audioFiles.length) {
+    setStatus("No se detectaron archivos de audio");
+    e.target.value = "";
+    return;
+  }
+  
+  audioFiles.forEach(f => {
+    songs.push({
+      name: f.name || "Sin nombre",
+      url: URL.createObjectURL(f),
+      file: f
+    });
+  });
+  
+  setStatus(audioFiles.length + " archivo" + (audioFiles.length === 1 ? "" : "s") + " añadido" + (audioFiles.length === 1 ? "" : "s"));
+  
+  render();
+  
+  if (index < 0) {
+    setTimeout(() => load(0, false), 30);
+  }
+  
+  e.target.value = "";
+});
+
+$("play").addEventListener("click", () => {
+  if (index < 0) {
+    if (songs.length) load(0, true);
+    return;
+  }
+  
+  if (audio.paused) {
+    audio.play().catch(() => setStatus("Error al reproducir. Prueba otra canción."));
+  } else {
+    audio.pause();
+  }
+});
+
+$("prev").addEventListener("click", () => {
+  if (songs.length) load(index - 1, true);
+});
+
+$("next").addEventListener("click", () => {
+  if (!songs.length) return;
+  const nextIndex = shuffle ? Math.floor(Math.random() * songs.length) : index + 1;
+  load(nextIndex, true);
+});
+
+$("shuffle").addEventListener("click", () => {
+  shuffle = !shuffle;
+  setStatus(shuffle ? "Aleatorio activado" : "Reproducción normal");
+});
+
+$("volume").addEventListener("input", e => {
+  audio.volume = Number(e.target.value);
+});
+
+$("progress").addEventListener("input", e => {
+  isSeeking = true;
+  if (audio.duration && Number.isFinite(audio.duration)) {
+    const pct = Number(e.target.value) / 100;
+    audio.currentTime = pct * audio.duration;
+  }
+});
+
+$("progress").addEventListener("change", () => {
+  isSeeking = false;
+});
+
+audio.addEventListener("timeupdate", () => {
+  if (isSeeking) return;
+  if (audio.duration && Number.isFinite(audio.duration)) {
+    $("progress").value = (audio.currentTime / audio.duration) * 100;
+  }
+  $("current").textContent = fmt(audio.currentTime);
+});
+
+audio.addEventListener("loadedmetadata", () => {
+  $("duration").textContent = fmt(audio.duration);
+});
+
+audio.addEventListener("play", () => {
+  $("play").textContent = "❚❚";
+  render();
+});
+
+audio.addEventListener("pause", () => {
+  $("play").textContent = "▶";
+  render();
+});
+
+audio.addEventListener("ended", () => {
+  if (!songs.length) return;
+  const nextIndex = shuffle ? Math.floor(Math.random() * songs.length) : index + 1;
+  load(nextIndex, true);
+});
+
+audio.addEventListener("error", () => {
+  setStatus("Error al cargar la canción. Prueba otro archivo.");
+  $("play").textContent = "▶";
+});
+
+render();
+})();
+</script>
+</body>
+</html>
